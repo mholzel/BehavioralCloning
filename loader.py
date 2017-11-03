@@ -1,7 +1,58 @@
-import csv, os, sklearn
-import numpy as np
+import csv, math, numpy, os
 
-def getLogs( dir = 'C:/Users/matth/Desktop/bcloning/' ):
+
+def getLogFolders():
+    dirs = []
+    offs = []
+    if False:
+        root = 'C:/Users/matth/Desktop/train/'
+        dir = ['middle/', 'hugLeft/', 'hugRight/', 'outLeft/', 'outRight/']
+        off = numpy.array([0.0, 2.0, -2.0, 5.0, -5.0]) * math.pi / 180.0
+        dir = ['middle/']
+        off = numpy.array([0.0]) * math.pi / 180.0
+        for i, d in enumerate(dir):
+            dir[i] = os.path.join(root, d)
+        dirs.extend(dir)
+        offs.extend(list(off))
+
+    if False:
+        root = 'C:/Users/matth/Desktop/bcloning/'
+        dir = ['recovery2/']
+        off = [0.0 for d in dir]
+        for i, d in enumerate(dir):
+            dir[i] = os.path.join(root, d)
+        dirs.extend(dir)
+        offs.extend(list(off))
+
+    if False:
+        root = 'C:/Users/matth/Desktop/'
+        dir = ['data/', 'aug/', 'aug2/', 'aug3/', 'aug4/']
+        dir = ['data/']
+        off = [0.0 for d in dir]
+        for i, d in enumerate(dir):
+            dir[i] = os.path.join(root, d)
+        dirs.extend(dir)
+        offs.extend(list(off))
+
+    if False:
+        root = 'C:/Users/matth/Desktop/'
+        dir = ['combined/']
+        off = [0.0 for d in dir]
+        for i, d in enumerate(dir):
+            dir[i] = os.path.join(root, d)
+        dirs.extend(dir)
+        offs.extend(list(off))
+
+    if True:
+        root = 'C:/Users/matth/Desktop/sims/'
+        dir = [os.path.join(root, d) for d in os.listdir(root)]
+        off = [0.0 for d in dir]
+        dirs.extend(dir)
+        offs.extend(list(off))
+    return dirs, offs
+
+
+def getLogs(dir='C:/Users/matth/Desktop/bcloning/'):
     '''
     We will look for all of the driving_log.csv files in the specified directory,
     including subdirectories.
@@ -13,38 +64,47 @@ def getLogs( dir = 'C:/Users/matth/Desktop/bcloning/' ):
             logs.append(os.path.join(dirname, logfile))
     return logs
 
+
 def loadLog(log):
+    '''
+    Return all of the lines from the specified log file.
+    If the file does not end with .csv, then we append 'driving_log.csv'
+    '''
+    if not log.endswith(".csv"):
+        log = os.path.join(log, 'driving_log.csv')
     with open(log) as csvfile:
         reader = csv.reader(csvfile)
         samples = []
-        for sample in reader: 
+        for sample in reader:
             samples.append(sample)
     return samples
-    
-def loadLogs(logs = None):
-    if logs is None: 
+
+
+def loadLogs(logs=None):
+    '''
+    Return all of the lines from the specified log files
+    '''
+    if logs is None:
         logs = getLogs()
     samples = []
-    for log in logs: 
-        samples.extend( loadLog(log) )
-    return np.array(samples)
+    for log in logs:
+        samples.extend(loadLog(log))
+    return numpy.array(samples)
 
-def sampleGenerator( samples, batch_size ):
-    num_samples = len(samples)
-    while 1: # Loop forever so the generator never terminates
-        shuffle(samples)
-        for offset in range(0, num_samples, batch_size):
-            batch_samples = samples[offset:offset+batch_size]
-            images = []
-            angles = []
-            for batch_sample in batch_samples:
-                name = './IMG/'+batch_sample[0].split('/')[-1]
-                center_image = cv2.imread(name)
-                center_angle = float(batch_sample[3])
-                images.append(center_image)
-                angles.append(center_angle)
-            X_train = np.array(images)
-            y_train = np.array(angles)
-            yield sklearn.utils.shuffle(X_train, y_train)
-    
-print( loadLogs().shape )
+
+def loadData(dirs, offsets=None):
+    '''
+    :param dirs: A list of directories containing driving data
+    :param offsets: The offsets to use for each of the dirs. This should be the same size as dirs
+    :return: A list of the samples in each directory
+    '''
+    allsamples = []
+    if offsets is None:
+        offsets = numpy.array([0.0 for dir in dirs])
+    for dir, offset in zip(dirs, offsets):
+        samples = loadLog(dir)
+        # Add the offset
+        for i, sample in enumerate(samples):
+            samples[i][3] = str(float(sample[3]) + offset)
+        allsamples.append(samples)
+    return allsamples

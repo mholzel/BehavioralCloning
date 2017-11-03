@@ -6,4 +6,4 @@ legacy/
 logs/
 models/
 tmpModels/
-runs/
+run/
