@@ -1,0 +1,9 @@
+.git/
+.idea/
+.ipynb_checkpoints/
+__pycache__/
+legacy/
+logs/
+models/
+tmpModels/
+runs/
